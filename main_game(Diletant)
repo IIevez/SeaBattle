@@ -1,0 +1,272 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <limits>
+#include <cctype>
+#include <utility>
+
+class Ship {
+public:
+    std::vector<std::pair<int, int>> coords;
+    std::vector<bool> hits;
+    void addCell(int r, int c) {
+        coords.emplace_back(r, c);
+        hits.push_back(false);
+    }
+    bool markHit(int r, int c) {
+        for (size_t i = 0; i < coords.size(); ++i) {
+            if (coords[i].first == r && coords[i].second == c) {
+                hits[i] = true;
+                return true;
+            }
+        }
+        return false;
+    }
+    bool isSunk() const {
+        for (bool h : hits) {
+            if (!h) return false;
+        }
+        return true;
+    }
+};
+
+class Board {
+private:
+    int rows, cols;
+    std::vector<std::vector<char>> grid;
+    std::vector<Ship> ships;
+public:
+    Board(int r, int c) : rows(r), cols(c), grid(r, std::vector<char>(c, '.')) {}
+
+    bool canPlaceShip(int r, int c, int length, char orient) const {
+        if (orient == 'H' || orient == 'h') {
+            if (c + length > cols) return false;
+            for (int i = 0; i < length; ++i) {
+                if (grid[r][c + i] != '.') return false;
+            }
+            for (int i = 0; i < length; ++i) {
+                int rr = r, cc = c + i;
+                for (int dr = -1; dr <= 1; ++dr) {
+                    for (int dc = -1; dc <= 1; ++dc) {
+                        int nr = rr + dr, nc = cc + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                            if (!(dr == 0 && dc == 0) && grid[nr][nc] == 'S') return false;
+                        }
+                    }
+                }
+            }
+        }
+        else if (orient == 'V' || orient == 'v') {
+            if (r + length > rows) return false;
+            for (int i = 0; i < length; ++i) {
+                if (grid[r + i][c] != '.') return false;
+            }
+            for (int i = 0; i < length; ++i) {
+                int rr = r + i, cc = c;
+                for (int dr = -1; dr <= 1; ++dr) {
+                    for (int dc = -1; dc <= 1; ++dc) {
+                        int nr = rr + dr, nc = cc + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                            if (!(dr == 0 && dc == 0) && grid[nr][nc] == 'S') return false;
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            return false;
+        }
+        return true;
+    }
+
+    bool placeShip(int r, int c, int length, char orient) {
+        if (!canPlaceShip(r, c, length, orient)) return false;
+        Ship ship;
+        if (orient == 'H' || orient == 'h') {
+            for (int i = 0; i < length; ++i) {
+                grid[r][c + i] = 'S';
+                ship.addCell(r, c + i);
+            }
+        }
+        else { // 'V' or 'v'
+            for (int i = 0; i < length; ++i) {
+                grid[r + i][c] = 'S';
+                ship.addCell(r + i, c);
+            }
+        }
+        ships.push_back(ship);
+        return true;
+    }
+
+    // shootAt возвращает: 0=промах, 1=попадание, 2=попадание и уничтожение, 3=уже стрелял тут
+    int shootAt(int r, int c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return -1;
+        if (grid[r][c] == 'X' || grid[r][c] == 'o') return 3;
+        if (grid[r][c] == 'S') {
+            grid[r][c] = 'X';
+            for (auto& ship : ships) {
+                if (ship.markHit(r, c)) {
+                    if (ship.isSunk()) return 2;
+                    else return 1;
+                }
+            }
+        }
+        // промах
+        grid[r][c] = 'o';
+        return 0;
+    }
+
+    bool allShipsSunk() const {
+        for (const auto& ship : ships) {
+            if (!ship.isSunk()) return false;
+        }
+        return true;
+    }
+
+    void display(bool showShips) const {
+        std::cout << "  ";
+        for (int c = 0; c < cols; ++c) {
+            std::cout << (c + 1) << ' ';
+        }
+        std::cout << "\n";
+        for (int r = 0; r < rows; ++r) {
+            std::cout << (r + 1) << ' ';
+            for (int c = 0; c < cols; ++c) {
+                char ch = grid[r][c];
+                if (!showShips && ch == 'S') std::cout << ". ";
+                else std::cout << ch << ' ';
+            }
+            std::cout << "\n";
+        }
+    }
+};
+
+class Player {
+public:
+    Board board;
+    Player(int r, int c) : board(r, c) {}
+};
+
+class Game {
+public:
+    void run() {
+        int rows, cols;
+        std::cout << "Введите размер поля (ряды и столбцы, каждый >= 6): ";
+        while (true) {
+            if (!(std::cin >> rows >> cols) || rows < 6 || cols < 6) {
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "Невалидный размер поля. Введите значение >= 6: ";
+                continue;
+            }
+            break;
+        }
+        Player player1(rows, cols), player2(rows, cols);
+
+        std::vector<int> shipLengths = { 4, 3, 2, 1 };
+
+        // Расстановка кораблей
+        for (int p = 1; p <= 2; ++p) {
+            Board& board = (p == 1 ? player1.board : player2.board);
+            std::cout << "\nИгрок " << p << ", расставьте корабли:\n";
+            board.display(true);
+            for (int length : shipLengths) {
+                int r, c;
+                char orient;
+                while (true) {
+                    std::cout << "Введите: начальный ряд, столбец и положение в пространстве (Горизонт/Вертикаль) (H/V) для корабля длиной " << length << ": ";
+                    if (!(std::cin >> r >> c >> orient)) {
+                        std::cin.clear();
+                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                        std::cout << "Невалидный ввод. ";
+                        continue;
+                    }
+                    r--; c--;
+                    if (r < 0 || r >= rows || c < 0 || c >= cols) {
+                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                        std::cout << "Координаты вне поля. ";
+                        continue;
+                    }
+                    orient = std::toupper(orient);
+                    if (orient != 'H' && orient != 'V') {
+                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                        std::cout << "Невалидное расположение. ";
+                        continue;
+                    }
+                    if (!board.canPlaceShip(r, c, length, orient)) {
+                        std::cout << "Невозможно разместить корабль в этом месте. ";
+                        continue;
+                    }
+                    board.placeShip(r, c, length, orient);
+                    board.display(true);
+                    break;
+                }
+            }
+            std::cout << "\n";
+        }
+
+        // Игровой цикл
+        int currentPlayer = 1;
+        while (true) {
+            Player& p1 = (currentPlayer == 1 ? player1 : player2);
+            Player& p2 = (currentPlayer == 1 ? player2 : player1);
+            Board& ownBoard = p1.board;
+            Board& enemyBoard = p2.board;
+
+            std::cout << "Очередь " << currentPlayer << "игрока.\n";
+            std::cout << "Ваше поле:\n";
+            ownBoard.display(true);
+            std::cout << "Вражеское поле:\n";
+            enemyBoard.display(false);
+
+            int tr, tc;
+            while (true) {
+                std::cout << "Введите ряд и столбец вашей цели: ";
+                if (!(std::cin >> tr >> tc)) {
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    std::cout << "Неверный ввод. ";
+                    continue;
+                }
+                tr--; tc--;
+                if (tr < 0 || tr >= rows || tc < 0 || tc >= cols) {
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    std::cout << "Координаты вне поля. ";
+                    continue;
+                }
+                int result = enemyBoard.shootAt(tr, tc);
+                if (result == 3) {
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    std::cout << "Сюда стреляли. ";
+                    continue;
+                }
+                if (result == 0) {
+                    std::cout << "Промах!\n";
+                }
+                else if (result == 1) {
+                    std::cout << "Попадание!\n";
+                }
+                else if (result == 2) {
+                    std::cout << "Попал - потопил!\n";
+                }
+                break;
+            }
+
+            if (enemyBoard.allShipsSunk()) {
+                std::cout << "Игрок " << currentPlayer << " побеждает! Все вражеские корабли потоплены.\n";
+                break;
+            }
+
+            currentPlayer = (currentPlayer == 1 ? 2 : 1);
+            std::cout << "\n";
+        }
+    }
+};
+
+int main() {
+    setlocale(LC_ALL, "Ru");
+    Game game;
+    game.run();
+    return 0;
+}
+// Дополнительная информация в документации.
