@@ -216,6 +216,21 @@ public:
     // Шаг 4: Основной игровой цикл.
     void run() {
         // Здесь могла бы быть логика расстановки кораблей placeShip,
+        // Размещение корабля
+    void placeShip(int startRow, int startCol,
+        int length, bool horizontal) {
+        Ship ship(length);
+
+        for (int i = 0; i < length; ++i) {
+            int row = startRow + (horizontal ? 0 : i);
+            int col = startCol + (horizontal ? i : 0);
+
+            field[row][col] = SHIP;
+            ship.addCell(row, col);
+        }
+
+        ships.push_back(ship);
+    }
         // но для простоты предположим, что мы начинаем стрельбу.
         bool gameOver = false;
         int currentPlayer = 1;
