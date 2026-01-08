@@ -1,12 +1,23 @@
-# Sea Battle!
+# ⚓ Sea Battle!
 
-Place your ships and get ready to sail matey!
+Place your **ships** and get ready to **sail**, matey!
 
-In this game a great battle unfolds between two players.
-Place your ships, move them and get ready to strike or to be striked!
+A great battle unfolds between **two players** on the open seas.  
+Strategize wisely: place your **ships**, **move** them across the board, and prepare to **strike** — or be **struck**!
 
-The game features economy!
-After defeating enemy ship you gain MONEY!
-You can spend money on movement, etc.
 ---
-That's all for today mateys, stay tuned, Admiral Fin is out! Copy.
+
+## 💰 Economy System
+
+Sea Battle features a dynamic ***economy*** system:
+
+- Defeat enemy ships to earn **MONEY**
+- Spend money on:
+  - Movement
+  - Tactical actions
+  - *And more!*
+
+---
+
+That's all for today, mateys. Stay tuned —  
+<ins>Admiral Fin</ins> is out! Copy.
