@@ -411,37 +411,32 @@ struct Board {// главное отличие структуры от клас�
         }
 
         // Меню действий игрока перед выстрелом
-        void actionMenu(int playerNum) {
-            while (true) {
-                cout << "\n===============================\n";
-                cout << "ДЕЙСТВИЯ (Игрок " << playerNum << ")\n";
-                cout << "1. Подвинуть корабль (50 монет за действие)\n";
-                cout << "2. Продолжить к выстрелу\n";
-                cout << "Ваш выбор: ";
-
-                int choice;
-                if (!(cin >> choice)) {
-                    cin.clear();
-                    cin.ignore((numeric_limits<streamsize>::max)(), '\n');
-                    cout << "Ошибка ввода!\n";
-                    continue;
-                }
-
-                if (choice == 1) {
-                    moveShipMenu(playerNum);
-                }
-                else if (choice == 2) {
-                    return; // пропускаем всё и идем к выстрелу
-                }
-                else {
-                    cout << "Нет такого пункта.\n";
-                }
-            }
-        }
         // shootAt возвращает: 0=промах, 1=попадание, 2=попадание и уничтожение, 3=уже стрелял тут, -1=ошибка
         int shootAt(int r, int c) {
             if (r < 0 || r >= rows || c < 0 || c >= cols) return -1;
             if (desk[r][c] == 'X' || desk[r][c] == 'o') return 3;
+
+            if (desk[r][c] == 'N') {
+                // Находим, какой корабль занимает эту клетку, и какой сегмент
+                for (auto& ship : ships) {
+                    for (size_t i = 0; i < ship.coords.size(); ++i) {
+                        if (ship.coords[i].first == r && ship.coords[i].second == c) {
+                            // Если сегмент живой -> попадание
+                            if (!ship.hits[i]) {
+                                ship.hits[i] = true;
+                                desk[r][c] = 'X';
+                                if (ship.isSunk()) return 2;
+                                return 1;
+                            }
+                            // Если сегмент уже подбит -> промах, но N остается N
+                            return 0;
+                        }
+                    }
+                }
+                // Если вдруг N без корабля (не должно случиться) — считаем промахом
+                return 0;
+            }
+
             if (desk[r][c] == 'S') {
                 desk[r][c] = 'X';
                 for (auto& ship : ships) {
@@ -681,6 +676,10 @@ public:
         bool gameOver = false;
         int currentPlayer = 1;
 
+        int lastShotR[3] = { -1, -1, -1 };
+        int lastShotC[3] = { -1, -1, -1 };
+        bool hasLastShot[3] = { false, false, false };
+
         while (!gameOver) {
             // Определяем, кто сейчас ходит, а кто защищается
             GamePlayer& attacker = (currentPlayer == 1 ? p1 : p2);
@@ -693,7 +692,6 @@ public:
             if (goShop == 1) {
                 shop.open(attacker, currentPlayer);
             }
-            attacker.board.actionMenu(currentPlayer);
 
             // Шаг 5: Ввод координат для выстрела
             int r, c;
@@ -704,7 +702,20 @@ public:
                 cout << "Ошибка ввода! Введите числа." << endl;
                 continue;
             }
+
+            // Нельзя стрелять в ту же клетку два хода подряд (можно только через ход) ДЛЯ КАЖДОГО ИГРОКА ОТДЕЛЬНО
+            if (hasLastShot[currentPlayer] && (r - 1) == lastShotR[currentPlayer] && (c - 1) == lastShotC[currentPlayer]) {
+                cout << "В эту клетку нельзя стрелять два хода подряд. Выберите другую.\n";
+                continue;
+            }
+
             int result = defender.board.shootAt(r - 1, c - 1);
+
+            if (result != -1) {
+                lastShotR[currentPlayer] = r - 1;
+                lastShotC[currentPlayer] = c - 1;
+                hasLastShot[currentPlayer] = true;
+            }
 
             // Шаг 6: Обработка результата выстрела (на основе вашего метода shootAt)
             switch (result) {
@@ -731,11 +742,11 @@ public:
 
             // Шаг 7: Проверка условия победы
             if (defender.board.allShipsSunk()) {
-                cout << "nПОЗДРАВЛЯЕМ! Игрок " << currentPlayer << " победил!" << endl;
+                cout << "\nПОЗДРАВЛЯЕМ! Игрок " << currentPlayer << " победил!" << endl;
                 gameOver = true;
             }
 
-            cout << "nНажмите Enter, чтобы продолжить...";
+            cout << "\nНажмите Enter, чтобы продолжить...";
             cin.ignore();
             cin.get();
             system("cls"); // Очистка экрана (для Windows)
