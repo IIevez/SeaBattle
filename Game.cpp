@@ -8,7 +8,6 @@
 #include <utility>
 #include <clocale>
 #include <Windows.h>
-#define NOMINMAX
 // для начала так сделал, потом отключу
 using namespace std;
 class Player {
@@ -173,11 +172,6 @@ struct Board {// главное отличие структуры от клас�
                     cout << "Ошибка ввода! Введите два числа.\n";
                     continue;
                 }
-
-<<<<<<< HEAD
-=======
-
->>>>>>> Lead
                 cout << "Введите направление (U/D/L/R): ";
                 if (!(cin >> dir)) {
                     cin.clear();
@@ -185,10 +179,6 @@ struct Board {// главное отличие структуры от клас�
                     cout << "Ошибка ввода!\n";
                     continue;
                 }
-<<<<<<< HEAD
-
-=======
->>>>>>> Lead
                 dir = (char)toupper((unsigned char)dir);
 
                 int dr = 0, dc = 0;
@@ -308,10 +298,6 @@ struct Board {// главное отличие структуры от клас�
                 cout << "\nУ вас нет кораблей для перемещения.\n";
                 return;
             }
-<<<<<<< HEAD
-
-=======
->>>>>>> Lead
             while (true) {
                 cout << "\n===============================\n";
                 cout << "ПЕРЕМЕЩЕНИЕ КОРАБЛЕЙ (Игрок " << playerNum << ")\n";
@@ -410,10 +396,6 @@ struct Board {// главное отличие структуры от клас�
                     cout << "Неизвестное действие.\n";
                     continue;
                 }
-<<<<<<< HEAD
-
-=======
->>>>>>> Lead
                 if (!canApplyMove(shipIndex, newCells)) {
                     cout << "Нельзя выполнить: выйдет за поле или накроет другой корабль/следы выстрелов.\n";
                     continue;
@@ -705,16 +687,12 @@ public:
             GamePlayer& defender = (currentPlayer == 1 ? p2 : p1);
 
             showInterface(attacker, defender, currentPlayer);
-
-<<<<<<< HEAD
-=======
             cout << "\nЗайти в магазин? (1 - да, 0 - нет): ";
             int goShop;
             cin >> goShop;
             if (goShop == 1) {
                 shop.open(attacker, currentPlayer);
             }
->>>>>>> Lead
             attacker.board.actionMenu(currentPlayer);
 
             // Шаг 5: Ввод координат для выстрела
